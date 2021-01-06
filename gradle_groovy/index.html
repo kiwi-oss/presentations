@@ -1,0 +1,510 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>The Gradle Groovy-based domain-specific language</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css" id="theme">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-markdown data-separator="===" data-separator-vertical="---">
+					<script type="text/template">
+						# The Gradle Groovy-based domain-specific language
+						===
+						```gradle [2]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets = sourceSets.main
+							executionData = fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled = true
+									destination = "${buildDir}/c.xml"
+								}
+								html.enabled = true
+							}
+						}
+						```
+						❌ There's an extension registered with name 'sourceSets'.
+						You should not reassign it via a property setter.
+						<!-- .element: class="fragment" -->
+						---
+						```gradle [3]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets sourceSets.main
+							executionData = fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled = true
+									destination = "${buildDir}/c.xml"
+								}
+								html.enabled = true
+							}
+						}
+						```
+						<!-- .slide: id="set-execution-data" -->
+
+						❌ Cannot set the value of read-only property 'executionData'
+						for task ':customReport' of type JacocoReport.  
+						[🤔](#/property-vs-method)
+						<!-- .element: class="fragment" -->
+						---
+						<!-- .slide: id="destination-as-string" -->
+
+						```gradle [7]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets sourceSets.main
+							executionData fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled = true
+									destination = "${buildDir}/c.xml"
+								}
+								html.enabled = true
+							}
+						}
+						```
+						❌ Could not set unknown property 'destination' for Report xml
+						of type TaskGeneratedSingleFileReport.  
+						[🤔](#/accept-files-parameters)
+						<!-- .element: class="fragment" -->
+						---
+						```gradle [6]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets sourceSets.main
+							executionData fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled = true
+									destination = file("${buildDir}/c.xml")
+								}
+								html.enabled = true
+							}
+						}
+						```
+						✅ Build successful
+						<!-- .element: class="fragment" -->
+						---
+						```gradle [6]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets sourceSets.main
+							executionData fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled true
+									destination = file("${buildDir}/c.xml")
+								}
+								html.enabled = true
+							}
+						}
+						```
+						✅ Build successful
+						<!-- .element: class="fragment" -->
+						---
+						```gradle [9]
+						tasks.register('customReport', JacocoReport) {
+							sourceSets sourceSets.main
+							executionData fileTree(dir: "a", include: '*.b')
+							reports {
+								xml {
+									enabled true
+									destination = file("${buildDir}/c.xml")
+								}
+								html.enabled = true
+							}
+						}
+						```
+						✅ Build successful
+						<!-- .element: class="fragment" -->
+						---
+						![Why, Gradle?](https://media.giphy.com/media/l2QEaAl7cBvQJQ6go/giphy.gif)
+						===
+						> Ideally, a Groovy build script looks mostly like configuration:
+						> setting some properties of the project, configuring dependencies,
+						> declaring tasks, and so on.
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html)
+						---
+						> Well-designed build scripts describe what steps are needed to build
+						> the software, not how those steps should do the work.
+
+						– [_What is Gradle?_](https://docs.gradle.org/6.7.1/userguide/what_is_gradle.html#5_build_scripts_operate_against_an_api)
+						---
+						> Gradle is modeled in a way that is customizable and extensible in the
+						> most fundamental ways.
+
+						– [_Gradle User Manual_](https://docs.gradle.org/6.7.1/userguide/userguide.html)
+						---
+						> Gradle provides several mechanisms that allow you to extend it, such as:
+						> * Custom task types
+						> * Custom task actions
+						> * Extra properties
+						> * Custom conventions
+						> * A custom model
+
+						– [_What is Gradle?_](https://docs.gradle.org/6.7.1/userguide/what_is_gradle.html#4_gradle_is_extensible_in_more_ways_than_one)
+						---
+						<!-- .slide: data-background-image="http://ih0.redbubble.net/image.23080376.9776/fc,550x550,navy.u5.jpg" data-background-size="contain" data-background-repeat="no-repeat" data-background-opacity="0.7" -->
+
+						![Groovy!](https://raw.githubusercontent.com/apache/groovy-website/asf-site/site/src/site/assets/img/groovy-logo-colored.svg)
+						<!-- .element: class="fragment" -->
+						---
+						> **Domain-Specific Languages**
+						>
+						> Flexible & malleable syntax, [...] customization mechanisms,
+						> to integrate readable business rules in your applications 
+
+						– [_The Apache Groovy programming language_](http://www.groovy-lang.org)
+						---
+						> Concise, readable and expressive syntax
+
+						> Seamlessly and transparently integrates and interoperates with Java
+
+						– [_The Apache Groovy programming language_](http://www.groovy-lang.org)
+						===
+						> Gradle has a rich API with several approaches to creating build logic.
+						> The associated flexibility can easily lead to unnecessarily complex builds
+						> [...].
+
+						– [_Best practices for authoring maintainable builds_](https://docs.gradle.org/6.7.1/userguide/authoring_maintainable_build_scripts.html)
+						---
+						> The Gradle runtime does not enforce a specific style for build logic.
+						> [...] it’s easy to end up with a build script that mixes
+						> declarative DSL elements with imperative, procedural code.
+
+						– [_Best practices for authoring maintainable builds_](https://docs.gradle.org/6.7.1/userguide/authoring_maintainable_build_scripts.html#sec:avoid_imperative_logic_in_scripts)
+						---
+						<!-- .slide: data-background-image="http://weknowyourdreams.com/images/hell/hell-10.jpg" -->
+
+						Gradle hell 😅
+						<!-- .element: class="r-fit-text" -->
+						===
+						## Properties
+
+						```gradle
+						resourceGroup.getPrototype().getName() == SERVER_TYPE_NAME
+						resourceGroup.prototype.name == SERVER_TYPE_NAME
+
+						resourcePrototype.setName("something")
+						resourcePrototype.name = "something"
+						```
+						---
+						## Parentheses
+
+						```gradle
+						println("Hello")
+						method(a, b)
+
+						println "Hello"
+						method a, b
+						```
+						---
+						## ❌
+
+						```gradle
+						methodWithParameter anotherMethod "parameter"
+						methodWithoutParameters
+						```
+						---
+						## ✅
+						```gradle
+						methodWithParameter anotherMethod("parameter")
+						methodWithoutParameters()
+						```
+						---
+						<!-- .slide: id="property-vs-method" -->
+
+						## Property vs. method
+
+						[For example
+						`JacocoReport`](https://docs.gradle.org/6.0.1/dsl/org.gradle.testing.jacoco.tasks.JacocoReport.html#N24008)
+
+						[🤔 Remember?](#/set-execution-data/0)
+						===
+						## Closures
+
+						```gradle
+						list.each( { println it } )
+						list.each(){ println it }
+						list.each  { println it }
+						```
+						---
+						## It's all methods
+
+						```gradle
+						sourceSets {
+							main {
+								java {
+									srcDirs = ['src']
+								}
+							}
+						}
+
+						dependencies {
+							implementation project(':util')
+						}
+						```
+						---
+						## Delegates
+
+						> The ability to change the delegate [...] of closures make it possible to
+						> design beautiful [DSLs] in Groovy.
+
+						– [_Closures_](http://www.groovy-lang.org/closures.html#_groovy_closures_vs_lambda_expressions)
+						---
+						> Each closure has a delegate object [...].
+						> Gradle uses this for [...] the object to be configured.
+
+						– [_Writing Build Scripts_](https://docs.gradle.org/6.7.1/userguide/writing_build_scripts.html#sec:closure_delegate)
+						---
+						## Determine delegate type
+
+						> * For `Action` arguments, look at the type’s parameter.
+						> * For `Closure` arguments, the documentation will explicitly say [it]
+						> 
+						> All new Gradle APIs declare an `Action` argument type rather than `Closure` [...]
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#delegation)
+						===
+						## Unqualified names
+
+						> * A task instance with that name.
+						> * A property on `Project`.
+						> * An extra property defined elsewhere in the project.
+						> * A property of an implicit object within a block.
+						> * A local variable defined earlier in the build script.
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#groovy:properties)
+						---
+						## Project object
+
+						> [...] every Groovy build script is backed by an implicit instance of
+						> [`Project`](https://docs.gradle.org/6.7.1/dsl/org.gradle.api.Project.html).
+						> If you see an unqualified element and you don’t know where it’s defined,
+						> always check the `Project` API documentation [...]
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#groovy:project_object)
+						---
+						> Note that plugins can add their own properties to the `Project` object. [...]
+						> If you’re struggling to find where a property comes from, check the
+						> documentation for the plugins that the build uses.
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#groovy:properties)
+						---
+						> When referencing a project property in your build script that is added
+						> by a non-core plugin, consider prefixing it with `project`.
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#groovy:properties)
+						===
+						## File paths
+						
+						> Never use `new File(relative path)` because this creates a path relative
+						> to the current working directory. Gradle can make no guarantees about the
+						> location [...]
+
+						– [_Working With Files_](https://docs.gradle.org/6.7.1/userguide/working_with_files.html#sec:single_file_paths)
+						---
+						```gradle
+						File configFile = file('src/config.xml')
+
+						configFile = file(configFile.absolutePath)
+
+						configFile = file(new File('src/config.xml'))
+
+						configFile = file(Paths.get('src', 'config.xml'))
+
+						configFile = file(Paths.get(System.getProperty('user.home')).resolve('global-config.xml'))
+						```						
+						---
+						> [...] relative paths [...] are relative to the current project directory,
+						> which may be a child project. If you want [a path] relative to the root project
+						> directory, [...] use the special `Project.getRootDir()` property to construct
+						> an absolute path [...]
+
+						– [_Working With Files_](https://docs.gradle.org/6.7.1/userguide/working_with_files.html#sec:single_file_paths)
+						---
+						```gradle
+						FileCollection collection = layout.files(
+								'src/file1.txt',
+								new File('src/file2.txt'),
+								['src/file3.csv', 'src/file4.csv'],
+								Paths.get('src', 'file5.txt'))
+						```
+						---
+						```gradle
+						ConfigurableFileTree tree = fileTree(dir: 'src/main')
+						tree.include '**/*.java'
+						tree.exclude '**/Abstract*'
+
+						tree = fileTree('src') {
+							include '**/*.java'
+						}
+
+						tree = fileTree(dir: 'src', include: '**/*.java')
+						tree = fileTree(dir: 'src', includes: ['**/*.java', '**/*.xml'])
+						tree = fileTree(dir: 'src', include: '**/*.java', exclude: '**/*test*/**')
+						```
+						---
+						> [...] a file collection is a flat list/set of files, while a file tree is
+						> a file and directory hierarchy. To convert a file tree to a flat collection,
+						> use the `FileTree.getFiles()` property.
+
+						– [_Working With Files_](https://docs.gradle.org/6.7.1/userguide/working_with_files.html#sec:file_trees)
+						---
+						<!-- .slide: id="accept-files-parameters" -->
+
+						> Many objects in Gradle have properties which accept a set of input files. [...]
+						> You can set [their value] using any of the types supported by the `files()`
+						> method [...]  
+						> **This is a feature of specific tasks!**
+
+						– [_Working With Files_](https://docs.gradle.org/6.7.1/userguide/working_with_files.html#sec:specifying_multiple_files)
+
+						[🤔 Remember?](#/destination-as-string/0)
+						===
+						## Collection-based properties
+
+						> [Methods in core Gradle tasks] follow the convention of appending to
+						> collections of values rather than replacing them. [...]  
+						> [We] recommend that you follow it in your own custom tasks.
+
+						– [_Working With Files_](https://docs.gradle.org/6.7.1/userguide/working_with_files.html#sec:specifying_multiple_files)
+						---
+						```gradle
+						test.includes = ['api/**', 'internal/**']
+
+						List<String> list = new ArrayList<String>()
+						list.add('api/**')
+						list.add('internal/**')
+						test.includes = list
+
+						Map<String, String> map = [key1:'value1', key2: 'value2']
+
+						// Named arguments are coerced into a single map argument
+						apply plugin: 'java'
+						```
+						---
+						## Groovy Development Kit
+
+						> [...] native support for various collection types, including lists, maps or
+						> ranges. Most of those are based on the Java collection types and decorated
+						> with additional methods [...]
+
+						– [_The Groovy Development Kit_](http://www.groovy-lang.org/groovy-dev-kit.html#_working_with_collections)
+						---
+						```gradle
+						[1, 2, 3].each {
+							println "Item: $it"
+						}
+
+						[1, 2, 3].collect { it * 2 }.each {
+							println it
+						}
+						```
+						(implicit parameter `it` 🤡)
+						<!-- .element: class="fragment" -->
+						===
+						## Variables
+
+						```gradle
+						def i = 1
+						String message = 'Hello'
+						```
+
+						> Avoid using local variables in the root of the project [...]. They cannot
+						> be read outside of the build script and Gradle has no knowledge of them.
+
+						– [_A Groovy Build Script Primer_](https://docs.gradle.org/6.7.1/userguide/groovy_build_script_primer.html#groovy:local_variables)
+						---
+						## Explicit type or `def`?
+
+						> [Rule] of thumb: whenever the code [is] going to be used by others as a public API, [favor] strong typing [...]. Whenever the code is for your use only, [...] you’re more free to decide when to type or not.
+
+						– [_Style guide_](http://www.groovy-lang.org/style-guide.html#_optional_typing_advice)
+						---
+						## Extra properties
+
+						> All enhanced objects in Gradle’s domain model can hold extra user-defined
+						> properties. This includes, but is not limited to, projects, tasks, and
+						> source sets.
+
+						– [_Writing Build Scripts_](https://docs.gradle.org/6.7.1/userguide/writing_build_scripts.html#sec:extra_properties)
+						---
+						```gradle
+						ext {
+							springVersion = "3.1.0.RELEASE"
+							emailNotification = "build@master.org"
+						}
+
+						sourceSets.all { ext.purpose = null }
+
+						sourceSets {
+							main {
+								purpose = "production"
+							}
+						}
+						```
+						===
+						## Configuration avoidance API
+
+						> [We] recommend that the configuration avoidance API be used whenever tasks
+						> are created by custom plugins.
+						> [...] avoid the cost of creating and configuring tasks during
+						> Gradle’s configuration phase when those tasks will never be executed.
+
+						– [_Task Configuration Avoidance_](https://docs.gradle.org/6.7.1/userguide/task_configuration_avoidance.html)
+						---
+						```gradle
+						// Old API offered shorthand DSL
+						task myTask(type: MyTask) {
+							...
+						}
+
+						// New, recommended API
+						tasks.register("myTask", MyTask) {
+							...
+						}
+						```
+						===
+						## The cost of flexible syntax 😬
+
+						```groovy
+						/*
+						junit testResults: "*/build/test-results/suiteTests/*.xml", allowEmptyResults: false
+						*/
+						```
+						===
+						# 🏁
+						🙇
+					</script>
+				</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				slideNumber: true,
+				previewLinks: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
