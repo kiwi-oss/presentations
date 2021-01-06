@@ -1,0 +1,3 @@
+[submodule "gradle_groovy/reveal.js"]
+	path = gradle_groovy/reveal.js
+	url = https://github.com/hakimel/reveal.js.git
